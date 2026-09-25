@@ -1,11 +1,12 @@
 # Building the dashboard in Tableau Public
 
-You need Tableau Public, the free desktop app, and a Tableau Public account.
-Run `python build.py` first. It writes `tableau/data/superstore_clean.csv`,
-the one flat table the workbook uses.
+You need Tableau Public, the free desktop app, signed in with the account
+that should own the report. Run `python build.py` first. It writes
+`tableau/data/tech_company_sales_clean.csv`, the one flat table the
+workbook uses.
 
-The workbook has three dashboards: Overview, Customers, and Products. Build
-the sheets first, then put them on the dashboards, then publish.
+The workbook has two dashboards. The first follows
+`tableau/original-dashboard.png`, keep that picture open while building.
 
 Names matter. Use the exact field names below, because later fields refer
 to earlier ones.
@@ -13,27 +14,23 @@ to earlier ones.
 ## 1. Connect
 
 1. Open Tableau Public. In the Connect pane on the left, click **Text file**
-   and pick `tableau/data/superstore_clean.csv`.
-2. On the Data Source page check the types in the column headers. Order Date,
-   Ship Date, and First Order Date must be dates (calendar icon). Sales,
-   Profit, Quantity, Discount, List Sales, and Ship Days must be numbers (#).
-   Postal Code must be a string (Abc). If it shows as a number, click the
-   type icon above the column and choose **String**.
-3. Right-click **State** in the column list, choose **Geographic Role**,
-   then **State/Province**. Do the same for **Country** with the role
-   **Country/Region**.
+   and pick `tableau/data/tech_company_sales_clean.csv`.
+2. On the Data Source page check the types in the column headers. Order
+   Date and First Order Date must be dates (calendar icon). Sales and
+   Profit must be numbers (#).
+3. Right-click **Country** in the column list, choose **Geographic Role**,
+   then **Country/Region**.
 4. Click **Sheet 1** at the bottom left.
 
 ## 2. Parameters
 
 In the Data pane on the left, click the small arrow at the top right of the
-pane and choose **Create Parameter**. Make these three.
+pane and choose **Create Parameter**. Make these two.
 
 | Name | Data type | Allowable values | Current value |
 |---|---|---|---|
-| Selected Year | Integer | List: 2023, 2024, 2025, 2026 | 2026 |
-| Metric | String | List: Sales, Profit, Orders, Customers | Sales |
-| Top N | Integer | Range from 5 to 20, step 5 | 10 |
+| Select Year | Integer | List: 2021, 2022, 2023 | 2023 |
+| Select Metric | String | List: Sales, Profit, Orders, Customers | Sales |
 
 After each one, right-click it in the Data pane and choose **Show Parameter**.
 
@@ -45,24 +42,33 @@ building the sheets.
 
 | Name | Formula |
 |---|---|
+| CY Sales | `SUM(IF YEAR([Order Date]) = [Select Year] THEN [Sales] END)` |
+| PY Sales | `SUM(IF YEAR([Order Date]) = [Select Year] - 1 THEN [Sales] END)` |
+| CY Profit | `SUM(IF YEAR([Order Date]) = [Select Year] THEN [Profit] END)` |
+| PY Profit | `SUM(IF YEAR([Order Date]) = [Select Year] - 1 THEN [Profit] END)` |
+| CY Orders | `COUNTD(IF YEAR([Order Date]) = [Select Year] THEN [Order ID] END)` |
+| PY Orders | `COUNTD(IF YEAR([Order Date]) = [Select Year] - 1 THEN [Order ID] END)` |
+| CY Customers | `COUNTD(IF YEAR([Order Date]) = [Select Year] THEN [Customer ID] END)` |
+| PY Customers | `COUNTD(IF YEAR([Order Date]) = [Select Year] - 1 THEN [Customer ID] END)` |
+| Sales YoY | `([CY Sales] - [PY Sales]) / [PY Sales]` |
+| Profit YoY | `([CY Profit] - [PY Profit]) / [PY Profit]` |
+| Orders YoY | `([CY Orders] - [PY Orders]) / [PY Orders]` |
+| Customers YoY | `([CY Customers] - [PY Customers]) / [PY Customers]` |
+| Sales Arrow | `IF [Sales YoY] >= 0 THEN "▲" ELSE "▼" END` |
+| Profit Arrow | `IF [Profit YoY] >= 0 THEN "▲" ELSE "▼" END` |
+| Orders Arrow | `IF [Orders YoY] >= 0 THEN "▲" ELSE "▼" END` |
+| Customers Arrow | `IF [Customers YoY] >= 0 THEN "▲" ELSE "▼" END` |
+| Sales Below PY | `[CY Sales] < [PY Sales]` |
+| Profit Below PY | `[CY Profit] < [PY Profit]` |
+| Orders Below PY | `[CY Orders] < [PY Orders]` |
+| Customers Below PY | `[CY Customers] < [PY Customers]` |
+| CY Metric | `CASE [Select Metric] WHEN "Sales" THEN [CY Sales] WHEN "Profit" THEN [CY Profit] WHEN "Orders" THEN [CY Orders] ELSE [CY Customers] END` |
+| PY Metric | `CASE [Select Metric] WHEN "Sales" THEN [PY Sales] WHEN "Profit" THEN [PY Profit] WHEN "Orders" THEN [PY Orders] ELSE [PY Customers] END` |
+| Metric Value | `CASE [Select Metric] WHEN "Sales" THEN SUM([Sales]) WHEN "Profit" THEN SUM([Profit]) WHEN "Orders" THEN COUNTD([Order ID]) ELSE COUNTD([Customer ID]) END` |
+| Period | `IF YEAR([Order Date]) = [Select Year] THEN "Current Period" ELSEIF YEAR([Order Date]) = [Select Year] - 1 THEN "Previous Period" END` |
+| Is Selected Year | `YEAR([Order Date]) = [Select Year]` |
 | Profit Ratio | `SUM([Profit]) / SUM([Sales])` |
-| Is Selected Year | `YEAR([Order Date]) = [Selected Year]` |
-| Sales CY | `SUM(IF YEAR([Order Date]) = [Selected Year] THEN [Sales] END)` |
-| Sales PY | `SUM(IF YEAR([Order Date]) = [Selected Year] - 1 THEN [Sales] END)` |
-| Sales YoY | `([Sales CY] - [Sales PY]) / [Sales PY]` |
-| Profit CY | `SUM(IF YEAR([Order Date]) = [Selected Year] THEN [Profit] END)` |
-| Profit PY | `SUM(IF YEAR([Order Date]) = [Selected Year] - 1 THEN [Profit] END)` |
-| Profit YoY | `([Profit CY] - [Profit PY]) / [Profit PY]` |
-| Orders CY | `COUNTD(IF YEAR([Order Date]) = [Selected Year] THEN [Order ID] END)` |
-| Orders PY | `COUNTD(IF YEAR([Order Date]) = [Selected Year] - 1 THEN [Order ID] END)` |
-| Orders YoY | `([Orders CY] - [Orders PY]) / [Orders PY]` |
-| Customers CY | `COUNTD(IF YEAR([Order Date]) = [Selected Year] THEN [Customer ID] END)` |
-| Customers PY | `COUNTD(IF YEAR([Order Date]) = [Selected Year] - 1 THEN [Customer ID] END)` |
-| Customers YoY | `([Customers CY] - [Customers PY]) / [Customers PY]` |
-| Selected Metric | `CASE [Metric] WHEN "Sales" THEN SUM([Sales]) WHEN "Profit" THEN SUM([Profit]) WHEN "Orders" THEN COUNTD([Order ID]) ELSE COUNTD([Customer ID]) END` |
-| Sales per Customer | `SUM([Sales]) / COUNTD([Customer ID])` |
-| Return Rate | `COUNTD(IF [Returned] = "Yes" THEN [Order ID] END) / COUNTD([Order ID])` |
-| First Order Date LOD | `{FIXED [Customer ID] : MIN([First Order Date])}` |
+| First Order Date LOD | `{FIXED [Customer ID] : MIN([Order Date])}` |
 | Customer Type LOD | `IF YEAR([Order Date]) = YEAR([First Order Date LOD]) THEN "New" ELSE "Returning" END` |
 
 Customer Type LOD must give the same answer as the Customer Type column
@@ -70,197 +76,158 @@ from the CSV. Check it once: put both on Rows of an empty sheet with
 COUNTD(Customer ID) on Text. Every row must have New with New and
 Returning with Returning, nothing crossed.
 
-Use the CSV's **First Order Date** in the calculation above. It was
-calculated from the full dataset. Using Order Date instead would let
-context filters change a customer's first-order year.
-
 Format the four YoY fields as percent with one decimal: right-click the
 field in the Data pane, **Default Properties**, **Number Format**,
-**Percentage**, 1 decimal. Format Profit Ratio and Return Rate the same way.
-Format Sales and Profit as **Currency (Custom)** with 0 decimals.
+**Percentage**, 1 decimal. Format Profit Ratio the same way. Format Sales,
+Profit, CY Sales, PY Sales, CY Profit and PY Profit as **Currency (Custom)**
+with 1 decimal and Display Units **Thousands (K)**, so they read like
+$1,042.2K.
 
-## 4. Sheets for the Overview
+## 4. Sheets for the Executive summary
 
-Rename each sheet by double-clicking its tab at the bottom.
+Rename each sheet by double-clicking its tab at the bottom. Two colours are
+used everywhere: light blue `#A6CEE3` for the current period and red
+`#E15759` for months below the previous year. The previous period is a
+black mark.
 
 **KPI Sales**
 - Marks type: Text.
-- Drag Sales CY onto Text. Drag Sales YoY onto Text too.
+- Drag CY Sales, PY Sales, Sales Arrow and Sales YoY onto Text.
 - Click Text on the Marks card, click the three dots, and lay it out as
-  the big number on the first line and `<Sales YoY> vs last year` on the
-  second line in a smaller size.
-- Right-click Sales CY on the Marks card, Format, and set Display Units to
-  Thousands (K) so it reads like $746K.
+  three lines: the big CY Sales, then `<PY Sales> PY` smaller, then
+  `<Sales Arrow><Sales YoY> vs PY`. Make the last line green.
 
-Make **KPI Profit**, **KPI Orders**, and **KPI Customers** the same way
-with the matching CY and YoY fields. Duplicate the sheet (right-click the
-tab, Duplicate) and swap the fields.
-
-**Monthly sales and profit ratio**
+**Sales by Month**
 - Drag Order Date to Columns. Click the pill's arrow and choose the
-  discrete **Month** (the one that shows "May", not "May 2026").
-- Drag Sales to Rows. Drag Profit Ratio to Rows next to it.
-- Right-click the Profit Ratio pill on Rows and choose **Dual Axis**.
-- On the Marks card, set the SUM(Sales) mark to **Bar** and the Profit
-  Ratio mark to **Line**.
-- Drag Is Selected Year to Filters and tick **True**.
-- Right-click the right axis, Format, Numbers, Percentage, 0 decimals.
+  discrete **Month** (the one that shows "May", not "May 2023").
+- Drag CY Sales to Rows. Drag PY Sales to Rows next to it.
+- Right-click the PY Sales pill on Rows and choose **Dual Axis**. Right-click
+  the right axis and choose **Synchronize Axis**.
+- On the Marks card, set the CY Sales mark to **Bar** and the PY Sales mark
+  to **Gantt Bar**. On the Gantt mark, click Size and make it thin, and
+  click Color and set it to black.
+- On the CY Sales mark, drag Sales Below PY onto Color. Set False to light
+  blue and True to red.
+- Right-click each axis and untick **Show Header**. Right-click the month
+  labels, Format, and use the first letter only if there is room, or keep
+  the three-letter month.
 
-**Profit by state**
-- Double-click State. Tableau draws a map.
-- Marks type: Map. Drag Profit onto Color.
-- Click Color, Edit Colors, pick **Orange-Blue Diverging**, tick
-  **Use full color range**, and click Advanced to set the center to 0.
-- Drag Sales, Profit, and Profit Ratio onto Tooltip.
-- Drag Is Selected Year to Filters and tick True.
+Make **KPI Profit**, **KPI Orders**, **KPI Customers** and **Profit by
+Month**, **Orders by Month**, **Customers by Month** the same way with the
+matching fields. Duplicate a sheet (right-click the tab, Duplicate) and
+swap the fields.
 
-**Sales by segment and category**
-- Drag Segment to Rows and Category to Columns.
-- Marks type: Square. Drag Selected Metric onto Color and again onto Label.
-- Drag Is Selected Year to Filters and tick True.
-- Color: pick **Blue** sequential.
+**Segment Comparison**
+- Drag Segment to Rows. Drag CY Metric to Columns, then PY Metric next to it.
+- Right-click PY Metric on Columns, **Dual Axis**, then synchronize the axes.
+- CY Metric mark: Bar, light blue. PY Metric mark: Gantt Bar, thin, black.
+- Drag CY Metric onto Label of the bar mark. Hide both axis headers.
 
-**Top products**
-- Drag Product Name to Rows and Sales to Columns.
-- Click the sort button on the toolbar so the biggest is on top.
-- Drag Product Name to Filters. Open the **Top** tab, choose **By field**,
-  Top, and pick the **Top N** parameter from the dropdown, by Sales, Sum.
-- Drag Profit onto Color, Orange-Blue Diverging, centered at 0.
+**Segment Trends**
+- Drag Segment to Columns. Drag Order Date to Columns next to it as
+  discrete **Month**.
+- Drag Metric Value to Rows.
+- Drag Period onto Color. Set Current Period to blue `#1F77B4` and
+  Previous Period to grey `#BAB0AC`.
+- Drag Period to Filters and untick Null, so only the two periods show.
+- Marks type: Line. Hide the month labels (right-click, Show Header off)
+  and keep the Segment headers on top.
+
+**Category Comparison** and **Category Trends**: same as the two segment
+sheets, with Category instead of Segment.
+
+**Country Map**
+- Double-click Country. Tableau draws a map of Europe.
+- Marks type: Map. Drag Metric Value onto Color. Pick **Blue** sequential.
+- Drag Country onto Label.
 - Drag Is Selected Year to Filters and tick True.
-- Right-click Is Selected Year on Filters and choose **Add to Context**,
-  so the ranking uses the selected year's sales.
+- Drag Country, Metric Value, CY Sales and PY Sales onto Tooltip.
 
 ## 5. Sheets for Customers
 
-**New and returning customers**
+**New and Returning Customers**
 - Drag Order Date to Columns as discrete **Year**.
 - Drag Customer ID to Rows. Click the pill's arrow, Measure, **Count (Distinct)**.
-- Drag Customer Type LOD onto Color. Drag CNTD(Customer ID) onto Label.
-- No year filter on this one. It shows all four years.
-
-**Sales per customer by segment**
-- Drag Segment to Rows and Sales per Customer to Columns.
-- Drag Sales per Customer onto Label. Sort descending.
-- Drag Is Selected Year to Filters and tick True.
-
-**Top customers**
-- Drag Customer Name to Rows and Sales to Columns. Sort descending.
-- Drag Customer Name to Filters, Top tab, By field, Top, the Top N
-  parameter, by Sales, Sum.
-- Drag Profit Ratio onto Color, Orange-Blue Diverging, centered at 0.
-- Drag Is Selected Year to Filters and tick True.
-- Add Is Selected Year to context so the ranking uses the selected year.
-
-**Sales and profit per customer**
-- Drag Sales to Columns and Profit to Rows.
-- Drag Customer ID onto Detail. Marks type: Circle. Drag Segment onto Color.
-- Click Size and make the circles small. Click Color and set Opacity to 70%.
-- Drag Customer Name onto Tooltip.
-- Drag Is Selected Year to Filters and tick True.
-- From the Analytics pane on the left, drag a **Constant Line** onto the
-  Profit axis and set it to 0.
-
-## 6. Sheets for Products
-
-**Sub-category sales and profit**
-- Drag Sub-Category to Rows and Sales to Columns. Sort descending.
-- Drag Profit onto Color, Orange-Blue Diverging, centered at 0.
-- Drag Profit onto Label.
-- Drag Is Selected Year to Filters and tick True.
-
-**Profit by discount level**
-- Right-click Discount in the Data pane and choose **Convert to Dimension**.
-- Drag Discount to Columns and Profit to Rows. Marks type: Bar.
-- Drag Profit onto Color, Orange-Blue Diverging, centered at 0. Drag Profit
-  onto Label.
-- Drag Is Selected Year to Filters and tick True.
-- Right-click the Discount axis, Format, Numbers, Percentage, 0 decimals.
-
-**Return rate by sub-category**
-- Drag Sub-Category to Rows and Return Rate to Columns. Sort descending.
-- Drag Return Rate onto Label.
-- Drag Is Selected Year to Filters and tick True.
-
-**Category share by quarter**
-- Drag Order Date to Columns as continuous **Quarter** (the one that shows
-  "Q2 2026"). Drag Sales to Rows. Drag Category onto Color.
-- Marks type: Area.
+- Drag Customer Type LOD onto Color, CNTD(Customer ID) onto Label.
 - No year filter. It shows all four years.
 
-## 7. Dashboards
+**Top Customers**
+- Drag Customer Name to Rows and Sales to Columns. Sort descending.
+- Drag Customer Name to Filters, **Top** tab, By field, Top 10 by Sales, Sum.
+- Drag Profit Ratio onto Color, Orange-Blue Diverging, centered at 0.
+- Drag Is Selected Year to Filters and tick True. Right-click it on the
+  Filters card and choose **Add to Context**, so the top 10 is for the
+  selected year.
+
+**Profit by Sub-Category**
+- Drag Sub-Category to Rows and Profit to Columns. Sort descending.
+- Drag Profit onto Color, Orange-Blue Diverging, centered at 0, and onto Label.
+- Drag Is Selected Year to Filters and tick True.
+
+## 6. Dashboards
 
 Click the **New Dashboard** button at the bottom (the icon with the plus and
 a grid). At the bottom left of the Dashboard pane set **Size** to
-**Fixed size**, 940 wide, 800 high, so it fits on the web page.
+**Fixed size**, 1000 wide, 850 high.
 
-**Overview**
-- Drag a **Text** object to the top and type `Superstore sales`. Click the
-  Insert button in the text editor and add the Selected Year parameter, so
-  the title reads `Superstore sales 2026` and changes with the picker.
-- Drag the four KPI sheets in one row under the title.
-- Under them, put Monthly sales and profit ratio on the left, two thirds
-  wide, and Profit by state on the right.
-- At the bottom, Sales by segment and category on the left and Top products
-  on the right.
-- Show the parameters: click the Monthly sheet on the dashboard, click its
-  small arrow, **Parameters**, and tick Selected Year, Metric, and Top N.
-  Tableau puts them on the right. Move them into one row under the title if
-  there is room.
-- Add filters the same way: sheet arrow, **Filters**, Region and Segment.
-  Click each filter's arrow and choose **Apply to Worksheets**,
-  **All Using This Data Source**.
-- Click the Sales by segment and category sheet and click the funnel icon
-  at its top right (**Use as Filter**). Now clicking a cell filters the page.
-- Open the Top products and Top customers worksheets. Add Region and
-  Segment to context on both, so the rankings use the filtered data.
-  On Top products, also add the generated Action (Category, Segment)
-  filter to context. If it is not visible yet, select a heatmap cell first.
-  Check that Top N 10 still shows ten results when enough products or
-  customers are available, then clear the selection.
-- Right-click the sheet titles you do not need and hide them, and give each
-  sheet a plain title, for example "Top products by sales".
+**Executive Summary**, laid out like `original-dashboard.png`:
+- A **Text** object at the top: `SALES PERFORMANCE - EXECUTIVE SUMMARY`,
+  bold, centered.
+- Under it a small text line for the legend: a light blue square, then
+  `Current Period`, a black bar, then `Previous Period`.
+- One row of four tiles. Each tile is a **Vertical** container holding the
+  KPI text sheet on top and its monthly sheet below, for Sales, Profit,
+  Orders, Customers. Give each tile a title in capitals (SALES, PROFIT,
+  ORDERS, CUSTOMERS) and a thin grey border.
+- Under the tiles, a row with the Select Year and Select Metric parameters.
+  Show them: click any sheet on the dashboard, click its small arrow,
+  **Parameters**, and tick both. Show Select Metric as a single value list
+  and lay it out horizontally.
+- Bottom left, two blocks: `SALES COMPARISON BY SEGMENT` with Segment
+  Comparison on the left and Segment Trends on the right, then
+  `SALES COMPARISON BY CATEGORY` with the two category sheets. Add a small
+  italic text line under each block title: `Comparison period December
+  <year> vs. December PY` is what the original said, `Current year vs.
+  previous year` is plainer.
+- Bottom right: the Country Map with the title `SALES COMPARISON BY
+  COUNTRY` and an italic line `Click on the country to filter the whole view`.
+- Click the map sheet and click the funnel icon at its top right
+  (**Use as Filter**). Now clicking a country filters every sheet.
+- Hide the sheet titles that would repeat the block titles.
 
 **Customers**
 - New dashboard, same fixed size.
-- Title text `Customers`, with the Selected Year parameter inserted.
-- Top row: New and returning customers on the left, Sales per customer by
-  segment on the right.
-- Bottom row: Top customers on the left, Sales and profit per customer on
-  the right.
-- Show the Selected Year and Top N parameters.
+- Title text `Customers`, with the Select Year parameter inserted through
+  the Insert button of the text editor.
+- Top row: New and Returning Customers on the left, Top Customers on the right.
+- Bottom: Profit by Sub-Category, full width.
+- Show the Select Year parameter.
 
-**Products**
-- New dashboard, same fixed size.
-- Title text `Products`, with the Selected Year parameter inserted.
-- Top row: Sub-category sales and profit on the left, Profit by discount
-  level on the right.
-- Bottom row: Return rate by sub-category on the left, Category share by
-  quarter on the right.
-- Show the Selected Year parameter.
-
-Then hide the worksheets so only the three dashboards show as tabs:
+Then hide the worksheets so only the two dashboards show as tabs:
 right-click each worksheet tab at the bottom and choose **Hide Sheet**.
-Rename the dashboards to Overview, Customers, and Products.
+Rename the dashboards to Executive Summary and Customers.
 
-## 8. Publish
+## 7. Publish
 
-1. Open the **File** menu and choose **Save to Tableau Public As**.
-2. Sign in with the Tableau Public account.
-3. Name the workbook `Superstore Sales Performance`. Click Save.
-4. The browser opens the published report. Open **Settings** (the gear
-   icon) and turn on **Show Sheets**, so the three tabs are visible.
+1. Make sure the app is signed in with the account that should own the
+   report. If not, open the **Server** menu and sign out, then sign in again.
+2. Open the **File** menu and choose **Save to Tableau Public As**.
+3. Name the workbook `Executive Sales Performance Dashboard`. Click Save.
+4. The browser opens the published report. Click **Edit Details** and turn
+   on **Show Sheets**, so the two tabs are visible. Save.
 5. Copy the link from the address bar. It looks like
-   `https://public.tableau.com/views/SuperstoreSalesPerformance/Overview`.
+   `https://public.tableau.com/views/ExecutiveSalesPerformanceDashboard/ExecutiveSummary`.
    Cut off anything after the dashboard name, from `?` on.
 
-## 9. Put it on the web page
+## 8. Put it on the web page
 
 1. Open `site/app.js` and set `TABLEAU_URL` to the link.
 2. In Tableau Public, open each dashboard, open the **Dashboard** menu, and
-   choose **Export Image**. Save them as `site/tableau/overview.png`,
-   `site/tableau/customers.png`, and `site/tableau/products.png`.
-3. Commit and push. The page shows the dashboard and the three images.
+   choose **Export Image**. Save them as `site/tableau/summary.png` and
+   `site/tableau/customers.png`.
+3. Add a short line to the README under "The Tableau dashboard" with the
+   link. Commit and push.
 
 ```bash
-git add site/app.js site/tableau && git commit -m "Add the Tableau dashboard" && git push
+git add site/app.js site/tableau README.md && git commit -m "Add the Tableau dashboard" && git push
 ```
