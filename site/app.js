@@ -1,11 +1,11 @@
-// reads the json the build wrote, draws the charts, runs the growth split
+// reads the json the build wrote, draws the charts, runs the discount tool
 
 // the published Tableau Public link goes here. empty hides the Tableau section
-const TABLEAU_URL = "";
+const TABLEAU_URL = "https://public.tableau.com/views/SuperstoreSalesPerformance_17903055112520/Overview";
 
 const COLOR = { blue: "#2a78d6", orange: "#eb6834", grey: "#c3c2b7", red: "#c8553d" };
 const SVG_NS = "http://www.w3.org/2000/svg";
-const YEARS = [2020, 2021, 2022, 2023];
+const YEARS = [2023, 2024, 2025, 2026];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const num = (v) => Math.round(v).toLocaleString("en-US");
@@ -105,10 +105,10 @@ function barChart(rows, { left = 150, right = 80 } = {}) {
   return area.root;
 }
 
-// horizontal bars from a zero line. negative values go left and are red
-function signedBarChart(rows, { format = usd, w = 960, left = 200, right = 90 } = {}) {
+// full width horizontal bars from a zero line. negative values go left and are red
+function signedBarChart(rows, { marker } = {}) {
   const rowH = 22;
-  const area = frame(rows.length * rowH + 20, { left, right, bottom: 8, top: 8, w });
+  const area = frame(rows.length * rowH + 20, { left: 200, right: 90, bottom: 8, top: 8, w: 960 });
   const neg = Math.min(0, ...rows.map((r) => r.value));
   const pos = Math.max(0, ...rows.map((r) => r.value));
   const xAt = (v) => area.x0 + ((area.x1 - area.x0) * (v - neg)) / (pos - neg);
@@ -117,7 +117,10 @@ function signedBarChart(rows, { format = usd, w = 960, left = 200, right = 90 } 
     const y = area.y0 + i * rowH;
     area.root.append(svg("text", { x: area.x0 - 8, y: y + 15, "text-anchor": "end", class: "label" }, r.label));
     area.root.append(svg("rect", { x: Math.min(xAt(0), xAt(r.value)), y: y + 4, width: Math.abs(xAt(r.value) - xAt(0)), height: 14, rx: 2, fill: r.value < 0 ? COLOR.red : COLOR.blue }));
-    area.root.append(svg("text", { x: (r.value < 0 ? xAt(0) : xAt(r.value)) + 6, y: y + 15, class: "value" }, format(r.value)));
+    area.root.append(svg("text", { x: (r.value < 0 ? xAt(0) : xAt(r.value)) + 6, y: y + 15, class: "value" }, usd(r.value)));
+    if (marker !== undefined && r.key === marker) {
+      area.root.append(svg("text", { x: 4, y: y + 15, class: "label", fill: COLOR.orange, "font-weight": 700 }, "cap ▸"));
+    }
   });
   return area.root;
 }
@@ -150,7 +153,7 @@ function sum(rows, key) {
 }
 
 // add up rows from the picked years that share a label
-function combine(rows, keys = ["sales", "profit", "orders", "customers", "lines"]) {
+function combine(rows, keys = ["sales", "profit", "orders", "customers", "lines", "returned_orders"]) {
   const out = new Map();
   for (const r of rows) {
     if (!selectedYears().includes(r.year)) continue;
@@ -191,7 +194,7 @@ function drawTiles() {
   }));
   document.getElementById("tiles-note").textContent = one
     ? `${one.new_customers} of the ${one.customers} customers were new in ${one.year}.`
-    : `${num(DATA.summary.totals.customers)} customers placed ${num(DATA.summary.totals.orders)} orders in ${DATA.summary.totals.countries} countries over four years.`;
+    : `${num(DATA.summary.totals.customers)} customers placed ${num(DATA.summary.totals.orders)} orders over four years.`;
 }
 
 function monthlyLines(key, format) {
@@ -208,33 +211,19 @@ function monthlyLines(key, format) {
 }
 
 function drawCharts() {
-  const k = (v) => "$" + Math.round(v / 1000) + "k";
-  mount("chart-sales", monthlyLines("sales", k));
+  mount("chart-sales", monthlyLines("sales", (v) => "$" + Math.round(v / 1000) + "k"));
   document.getElementById("sales-caption").textContent = year === "all"
-    ? "Sales per month over the four years. The second half of each year is stronger than the first."
-    : `Sales per month in ${year}. The dashed line is ${Number(year) - 1}.`;
-  mount("chart-profit", monthlyLines("profit", k));
+    ? "Monthly sales from 2023 to 2026. Sales are generally higher towards the end of each year."
+    : `Monthly sales in ${year}. A dashed line shows the previous year when data is available.`;
+  mount("chart-ratio", monthlyLines("profit_ratio", (v) => pct(v, 0)));
 
   const seg = combine(DATA.breakdowns.segment).sort((a, b) => b.sales - a.sales);
   mount("chart-segment", barChart(seg.map((r) => ({ label: r.label, total: r.sales, part: r.profit, text: usdShort(r.sales) })), { left: 100 }));
-  const cat = combine(DATA.breakdowns.category).sort((a, b) => b.sales - a.sales);
-  mount("chart-category", barChart(cat.map((r) => ({ label: r.label, total: r.sales, part: r.profit, text: usdShort(r.sales) + ", " + pct(r.profit / r.sales, 0) })), { left: 90, right: 100 }));
+  const reg = combine(DATA.breakdowns.region).sort((a, b) => b.sales - a.sales);
+  mount("chart-region", barChart(reg.map((r) => ({ label: r.label, total: r.sales, part: r.profit, text: usdShort(r.sales) + ", " + pct(r.profit / r.sales, 0) })), { left: 70, right: 100 }));
 }
 
 // ---------- part 2 ----------
-
-function drawPlaces() {
-  const countries = combine(DATA.breakdowns.country).sort((a, b) => b.sales - a.sales);
-  mount("chart-country", barChart(countries.map((r) => ({
-    label: r.label, total: r.sales, part: Math.max(0, r.profit), text: usdShort(r.sales), red: r.profit < 0,
-  })), { left: 120, right: 70 }));
-  mount("chart-country-ratio", signedBarChart(countries.map((r) => ({ label: r.label, value: r.profit / r.sales })), { format: (v) => pct(v, 0), w: 640, left: 120, right: 60 }));
-
-  const sub = combine(DATA.breakdowns.sub_category).sort((a, b) => b.profit - a.profit);
-  mount("chart-subcategory", signedBarChart(sub.map((r) => ({ label: r.label, value: r.profit }))));
-}
-
-// ---------- part 3 ----------
 
 function drawCustomers() {
   const rows = DATA.breakdowns.customer_type.filter((r) => selectedYears().includes(r.year));
@@ -246,64 +235,72 @@ function drawCustomers() {
   mount("chart-customers", barChart(byYear, { left: 50, right: 160 }));
   document.getElementById("chart-customers").append(legend([{ label: "new", color: COLOR.blue }, { label: "returning", color: COLOR.grey }]));
 
-  const top = combine(DATA.breakdowns.customers, ["sales", "profit"]).sort((a, b) => b.sales - a.sales).slice(0, 10);
-  mount("chart-top-customers", barChart(top.map((r) => ({
-    label: r.label, total: r.sales, part: Math.max(0, r.profit), text: usdShort(r.sales), red: r.profit < 0,
-  })), { left: 150, right: 70 }));
+  const products = combine(DATA.breakdowns.products, ["sales", "profit"]).sort((a, b) => b.sales - a.sales).slice(0, 10);
+  mount("chart-products", barChart(products.map((r) => ({
+    label: r.label.length > 24 ? r.label.slice(0, 23) + "…" : r.label,
+    total: r.sales, part: Math.max(0, r.profit), text: usdShort(r.sales) + (r.profit < 0 ? ", loss" : ""), red: r.profit < 0,
+  })), { left: 175, right: 90 }));
+  document.getElementById("chart-products").append(legend([{ label: "sales", color: COLOR.blue }, { label: "of which profit", color: COLOR.grey }]));
 }
 
-const KINDS = [
-  ["new", "New customers"],
-  ["back", "Came back after a year away"],
-  ["up", "Returning, spent more"],
-  ["down", "Returning, spent less"],
-  ["lost", "Did not order this year"],
-];
+// ---------- part 3 ----------
 
-function drawGrowth() {
-  const y = year === "all" ? 2023 : Number(year);
-  const segment = document.querySelector("[data-segment]").value;
-  const box = document.getElementById("growth-answer");
-  if (y === YEARS[0]) {
-    box.innerHTML = `<div class="big">2020 is the first year</div><div class="row">There is no year before it to compare with. Pick another year above.</div>`;
-    mount("chart-growth", svg("svg", { viewBox: "0 0 960 10" }));
-    return;
+function cap() {
+  return Number(document.querySelector("[data-cap]").value) / 100;
+}
+
+function drawDiscount() {
+  const sub = combine(DATA.breakdowns.sub_category).sort((a, b) => b.profit - a.profit);
+  mount("chart-subcategory", signedBarChart(sub.map((r) => ({ label: r.label, value: r.profit }))));
+
+  const levels = new Map();
+  for (const r of DATA.discount) {
+    if (!selectedYears().includes(r.year)) continue;
+    const cur = levels.get(r.discount) || { lines: 0, sales: 0, profit: 0, list_sales: 0 };
+    for (const k of ["lines", "sales", "profit", "list_sales"]) cur[k] += r[k];
+    levels.set(r.discount, cur);
   }
-  const rows = DATA.growth.filter((g) => g.year === y && (segment === "all" || g.segment === segment));
-  const parts = KINDS.map(([kind, label]) => {
-    const hits = rows.filter((g) => g.kind === kind);
-    return { kind, label, customers: sum(hits, "customers"), value: sum(hits, "delta") };
-  });
-  const change = sum(parts, "value");
-  const info = DATA.summary.years.find((r) => r.year === y);
-  const base = segment === "all"
-    ? info.sales - change
-    : sum(DATA.breakdowns.segment.filter((r) => r.year === y - 1 && r.label === segment), "sales");
-  const part = (kind) => parts.find((p) => p.kind === kind);
+  const rows = [...levels].sort((a, b) => a[0] - b[0]);
+  const c = cap();
+  const capKey = rows.reduce((best, [d]) => (d <= c + 1e-9 ? d : best), rows[0][0]);
+  mount("chart-discount", signedBarChart(rows.map(([d, v]) => ({
+    key: d, label: `${Math.round(d * 100)}% (${num(v.lines)} lines)`, value: v.profit,
+  })), { marker: c > 0 ? capKey : undefined }));
+
+  // every line above the cap is sold at the capped discount instead
+  let profit = 0, lines = 0, extra = 0, cappedLines = 0;
+  for (const [d, v] of rows) {
+    profit += v.profit;
+    lines += v.lines;
+    if (d > c + 1e-9) {
+      extra += v.list_sales * (1 - c) - v.sales;
+      cappedLines += v.lines;
+    }
+  }
+  const box = document.getElementById("cap-answer");
   box.innerHTML = `<div class="big"></div><div class="row"></div><div class="row"></div>`;
-  box.children[0].textContent = `Sales ${change >= 0 ? "grew" : "fell"} by ${usd(Math.abs(change))} in ${y}`;
-  box.children[1].textContent =
-    `That is ${signed(change / base)} against ${y - 1}${segment === "all" ? "" : " for " + segment}. ` +
-    `Returning customers who spent more added ${usd(part("up").value)} (${part("up").customers} customers), ` +
-    `and ${part("back").customers} who came back after a year away added ${usd(part("back").value)}. ` +
-    `Only ${part("new").customers} customer${part("new").customers === 1 ? " was" : "s were"} new.`;
-  box.children[2].textContent =
-    `Returning customers who spent less took away ${usd(-part("down").value)} (${part("down").customers} customers), ` +
-    `and ${part("lost").customers} customers who did not order took away ${usd(-part("lost").value)}.`;
-  mount("chart-growth", signedBarChart(parts.map((p) => ({ label: `${p.label} (${p.customers})`, value: p.value })), { left: 260 }));
+  box.children[0].textContent = cappedLines === 0
+    ? "No order lines exceed this discount limit"
+    : `Profit under this assumption: ${usd(profit + extra)}`;
+  box.children[1].textContent = cappedLines === 0
+    ? `The highest discount in ${year === "all" ? "the data" : year} is ${pct(rows[rows.length - 1][0], 0)}.`
+    : `Recorded profit was ${usd(profit)}. The calculated change is ${signed(extra / Math.abs(profit))}. ${num(cappedLines)} of ${num(lines)} order lines (${pct(cappedLines / lines, 0)}) had a discount above ${pct(c, 0)}.`;
+  box.children[2].textContent = cappedLines === 0 ? "" :
+    `Sales would increase by ${usd(extra)} if customers bought the same quantities with a maximum discount of ${pct(c, 0)}. This does not account for changes in demand.`;
 }
 
 // ---------- tableau ----------
 
 function showTableau() {
   if (!TABLEAU_URL) return;
-  document.getElementById("tableau").hidden = false;
+  const section = document.getElementById("tableau");
+  section.hidden = false;
   const viz = document.createElement("tableau-viz");
   viz.setAttribute("src", TABLEAU_URL);
   viz.setAttribute("toolbar", "bottom");
   document.getElementById("viz").replaceChildren(viz);
   document.getElementById("viz-link").href = TABLEAU_URL;
-  for (const id of ["shot-summary", "shot-customers"]) document.getElementById(id).href = TABLEAU_URL;
+  for (const id of ["shot-overview", "shot-customers", "shot-products"]) document.getElementById(id).href = TABLEAU_URL;
 }
 
 // ---------- wiring ----------
@@ -311,16 +308,15 @@ function showTableau() {
 function drawAll() {
   drawTiles();
   drawCharts();
-  drawPlaces();
   drawCustomers();
-  drawGrowth();
+  drawDiscount();
 }
 
 async function main() {
-  const [summary, monthly, breakdowns, growth] = await Promise.all(
-    ["summary", "monthly", "breakdowns", "growth"].map((n) => fetch(`data/${n}.json`).then((r) => r.json())),
+  const [summary, monthly, breakdowns, discount] = await Promise.all(
+    ["summary", "monthly", "breakdowns", "discount"].map((n) => fetch(`data/${n}.json`).then((r) => r.json())),
   );
-  DATA = { summary, monthly, breakdowns, growth };
+  DATA = { summary, monthly, breakdowns, discount };
   showTableau();
 
   document.querySelectorAll(".switch button").forEach((b) =>
@@ -329,7 +325,10 @@ async function main() {
       document.querySelectorAll(".switch button").forEach((x) => x.classList.toggle("is-on", x === b));
       drawAll();
     }));
-  document.querySelector("[data-segment]").addEventListener("change", drawGrowth);
+  document.querySelector("[data-cap]").addEventListener("input", (e) => {
+    document.getElementById("cap-value").textContent = e.target.value + "%";
+    drawDiscount();
+  });
   drawAll();
 }
 

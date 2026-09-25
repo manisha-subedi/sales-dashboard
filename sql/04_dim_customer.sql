@@ -5,5 +5,5 @@ select customer_id,
        any_value(segment) as segment,
        min(order_date) as first_order_date,
        count(distinct order_id) as orders
-from stg_sales
+from stg_orders
 group by 1;

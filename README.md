@@ -1,41 +1,46 @@
-# Four years of sales at a tech company
+# Four years of Superstore sales
 
 [View the project](https://manisha-subedi.github.io/sales-dashboard/)
 
-The data is 10,000 order lines from a practice dataset about a tech company
-that sells hardware, software, and services in 15 European countries, from
-January 2020 to December 2023. It has 4,596 orders and 795 customers.
+This project uses Tableau's Superstore sample data, which represents a
+fictional retailer. It covers 10,194 order lines, 5,111 orders and 804
+customers from January 2023 to December 2026.
 
-I built a Tableau dashboard on it for an executive audience, and a web page
-that shows the same numbers as plain charts and splits each year's growth
-by who caused it.
+I used DuckDB and SQL to prepare the data and built a three-page Tableau
+report. The project website includes the report, charts and a calculator
+for comparing different discount limits.
 
 ```
-Order lines: 10,000
-Orders: 4,596
-Customers: 795
-2023 vs 2022: sales +36.2%, profit +30.9%, orders +26.7%, customers +6.0%
-Biggest segment: Consumer, $1.53M of $2.94M
-Biggest countries: France, Germany, United Kingdom
-Countries that lose money: Netherlands, Sweden, Ireland, Portugal, Denmark
+Order lines: 10,194
+Orders: 5,111
+Customers: 804
+2025 vs 2024: sales +29.8%, profit +33.3%, customers +13.2%
+2026 vs 2025: sales +21.4%, profit +16.0%, customers +7.8%
+Profit ratio with no discount: 29.6%
+Profit ratio with a discount over 40%: -77.4%
 ```
 
 ## The Tableau dashboard
 
-Two pages, built in Tableau Public from one flat CSV that the build writes.
+[Open the report in Tableau Public](https://public.tableau.com/views/SuperstoreSalesPerformance_17903055112520/Overview)
 
-1. Executive summary: sales, profit, orders, and customers for the picked
-   year, each with the year before and the change in percent, and a bar
-   per month with the previous year as a mark. A metric picker drives the
-   segment and category comparisons, each with small trend lines for the
-   current and previous year, and a map of Europe. Clicking a country
-   filters the page.
-2. Customers: new and returning customers by year, the top customers, and
-   profit by sub-category.
+The report uses a CSV exported by the build script and has three pages.
 
-`tableau/GUIDE.md` lists the parameters and calculated fields, and the
-steps to build the workbook. `tableau/original-dashboard.png` is the first
-version of the dashboard, which this one follows.
+1. Overview shows sales, profit, orders and customers with year-on-year
+   changes. Charts compare monthly results, states, segments and products.
+2. Customers compares new and returning customers, sales per customer and
+   the highest-spending customers.
+3. Products compares sales, profit and return rates by product group,
+   profit at each discount level and category sales over time.
+
+The year selection applies across the report. Region and segment filters
+on Overview also apply to the other pages. The Top N control sets how many
+products or customers appear in the rankings. Clicking a cell in the
+segment and category chart filters the other charts on Overview.
+
+[The Tableau guide](tableau/GUIDE.md) lists the calculations, filters and
+steps used to build the report. `tableau/Superstore Sales Performance.twbx`
+is the packaged workbook, and `site/tableau/` holds an image of each page.
 
 ## Run the project
 
@@ -46,41 +51,41 @@ pytest
 python -m http.server --directory site
 ```
 
-`build.py` builds the tables in `sales.duckdb`, writes four JSON files to
-`site/data/`, and one CSV to `tableau/data/`.
+`build.py` downloads the Excel file from Tableau, writes the three sheets
+as CSV, builds the tables in `sales.duckdb`, and writes four JSON files to
+`site/data/` and one CSV to `tableau/data/`.
 
 ## Data model
 
 | Table | Rows | What it is |
 |---|---|---|
-| `dim_date` | 1,461 | every day from the first order to the last |
-| `dim_customer` | 795 | name, segment, and the date of the first order |
-| `dim_geo` | 127 | state, country, and the company's sales region |
-| `fact_sales` | 10,000 | one row per order line |
+| `dim_date` | 1,464 | every day from the first order to the last shipment |
+| `dim_customer` | 804 | name, segment, and the date of the first order |
+| `dim_product` | 1,862 | name, category, sub-category |
+| `fact_sales` | 10,194 | one row per order line |
 | `kpi_year` | 4 | sales, profit, orders, customers, and growth per year |
-| `kpi_month` | 48 | sales, profit, orders, and customers per month |
-| `customer_year` | 2,503 | sales per customer per year |
+| `kpi_month` | 48 | sales, profit, and profit ratio per month |
 
-Three things in the source needed care. Dates are written day first. The
-file has two columns that mark the current and last year by hand, and they
-are dropped, the year comes from the order date. Some order ids appear with
-more than one customer or date, so orders are counted as distinct ids, the
-same way the original dashboard did.
+Returns and regional managers are joined onto the fact table.
 
-A customer is new in the year of their first order and returning after
-that. Tableau can compute the same thing with a fixed level of detail
-expression, so the two can be checked against each other.
+The source has 32 product IDs with more than one name. `dim_product` keeps
+the most common name for each ID and records how many names appeared.
+Duplicate return records are removed before joining them to sales.
 
-## Where the growth came from
+A customer is new in the year of their first recorded order and returning
+in later years. Tableau uses the first-order date calculated from the full
+dataset, so changing a region filter does not change that classification.
 
-Sales grew every year while the customer count barely moved. For each year,
-every customer goes in one of five groups by comparing their sales with the
-year before: new, came back after a year away, returning and spent more,
-returning and spent less, or did not order. The sales change of each group
-adds up to the total change, and a test checks that.
+## The discount cap
 
-In 2023, returning customers who spent more added $497k and customers who
-came back after a year away added $185k. Only 5 customers were new.
+Every order line has a discount between 0 and 80 percent. `list_sales` is
+its value before the discount. The calculator applies a chosen maximum to
+order lines with a higher discount and recalculates sales and profit.
+Costs and quantities stay unchanged.
+
+This assumes customers would buy the same quantities at a higher price.
+Some might buy less or not buy at all. The result is a comparison under
+these assumptions, not a profit forecast.
 
 ## Tests
 
@@ -88,10 +93,11 @@ came back after a year away added $185k. Only 5 customers were new.
 pytest
 ```
 
-The tests cover row counts, keys, the country mapping, date gaps, the new
-customer rule, the headline growth numbers, and that the growth groups add
-up to the change in sales.
+The tests check row counts, keys, date coverage, product names, return
+records, customer classification, prices before discounts and growth
+figures. They also check the total loss on heavily discounted order lines.
 
 ## Data source
 
-A practice dataset used in Tableau training. Both files are in `data/`.
+Sample - Superstore, the sample dataset that ships with Tableau. The build
+downloads it from public.tableau.com.
