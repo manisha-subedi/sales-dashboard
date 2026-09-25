@@ -1,5 +1,4 @@
 .venv/
-site/data/
 tableau/data/
 sales.duckdb
 __pycache__/

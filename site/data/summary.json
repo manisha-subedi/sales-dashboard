@@ -1,0 +1,66 @@
+{
+ "totals": {
+  "lines": 10000,
+  "orders": 4596,
+  "customers": 795,
+  "countries": 15,
+  "first_order": "2020-01-01",
+  "last_order": "2023-12-31",
+  "sales": 2938089.061499998,
+  "profit": 372829.7415000019
+ },
+ "years": [
+  {
+   "year": 2020,
+   "sales": 477796.7249999998,
+   "profit": 61376.17500000001,
+   "orders": 806,
+   "customers": 533,
+   "new_customers": 533,
+   "profit_ratio": 0.12845666742483436,
+   "sales_yoy": null,
+   "profit_yoy": null,
+   "orders_yoy": null,
+   "customers_yoy": null
+  },
+  {
+   "year": 2021,
+   "sales": 652647.3659999993,
+   "profit": 84024.81600000012,
+   "orders": 1038,
+   "customers": 598,
+   "new_customers": 198,
+   "profit_ratio": 0.1287445876246748,
+   "sales_yoy": 0.3659519453591893,
+   "profit_yoy": 0.3690135626731399,
+   "orders_yoy": 0.28784119106699757,
+   "customers_yoy": 0.12195121951219523
+  },
+  {
+   "year": 2022,
+   "sales": 765441.2429999987,
+   "profit": 98484.39299999997,
+   "orders": 1214,
+   "customers": 666,
+   "new_customers": 59,
+   "profit_ratio": 0.12866355700146162,
+   "sales_yoy": 0.17282514704885754,
+   "profit_yoy": 0.17208698201731054,
+   "orders_yoy": 0.16955684007707128,
+   "customers_yoy": 0.11371237458193972
+  },
+  {
+   "year": 2023,
+   "sales": 1042203.7274999971,
+   "profit": 128944.35749999975,
+   "orders": 1538,
+   "customers": 706,
+   "new_customers": 5,
+   "profit_ratio": 0.12372279439962001,
+   "sales_yoy": 0.361572474740558,
+   "profit_yoy": 0.3092872238142321,
+   "orders_yoy": 0.2668863261943988,
+   "customers_yoy": 0.06006006006006004
+  }
+ ]
+}
