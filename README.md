@@ -2,12 +2,13 @@
 
 [View the project](https://manisha-subedi.github.io/sales-dashboard/)
 
-Superstore is a made-up office supplies company that ships with Tableau as
-sample data. It has 10,194 order lines, 5,111 orders, and 804 customers,
-from January 2023 to December 2026.
+This project uses Tableau's Superstore sample data, which represents a
+fictional retailer. It covers 10,194 order lines, 5,111 orders and 804
+customers from January 2023 to December 2026.
 
-I built a Tableau dashboard on it, and a web page that shows the same
-numbers as plain charts and lets you try a cap on discounts.
+I used DuckDB and SQL to prepare the data and built a three-page Tableau
+report. The project website includes the report, charts and a calculator
+for comparing different discount limits.
 
 ```
 Order lines: 10,194
@@ -21,22 +22,25 @@ Profit ratio with a discount over 40%: -77.4%
 
 ## The Tableau dashboard
 
-Three pages, built in Tableau Public from one flat CSV that the build writes.
+[Open the report in Tableau Public](https://public.tableau.com/views/SuperstoreSalesPerformance_17903055112520/Overview)
 
-1. Overview: four KPI tiles with growth against the year before, monthly
-   sales with the profit ratio on a second axis, a map of profit by state,
-   sales by segment and category, and the top N products.
-2. Customers: new and returning customers by year, sales per customer by
-   segment, the top N customers coloured by profit ratio, and sales
-   against profit for every customer.
-3. Products: sub-category sales coloured by profit, profit by discount
-   level, return rate by sub-category, and category share by quarter.
+The report uses a CSV exported by the build script and has three pages.
 
-The pages share a year parameter, a metric parameter, a top N parameter,
-and filters for region and segment. Clicking a segment filters the page.
+1. Overview shows sales, profit, orders and customers with year-on-year
+   changes. Charts compare monthly results, states, segments and products.
+2. Customers compares new and returning customers, sales per customer and
+   the highest-spending customers.
+3. Products compares sales, profit and return rates by product group,
+   profit at each discount level and category sales over time.
 
-`tableau/GUIDE.md` lists every parameter and calculated field, and the
-steps to build the workbook.
+The year selection applies across the report. Region and segment filters
+on Overview also apply to the other pages. The Top N control sets how many
+products or customers appear in the rankings. Clicking a cell in the
+segment and category chart filters the other charts on Overview.
+
+[The Tableau guide](tableau/GUIDE.md) lists the calculations, filters and
+steps used to build the report. `tableau/Superstore Sales Performance.twbx`
+is the packaged workbook, and `site/tableau/` holds an image of each page.
 
 ## Run the project
 
@@ -64,25 +68,24 @@ as CSV, builds the tables in `sales.duckdb`, and writes four JSON files to
 
 Returns and regional managers are joined onto the fact table.
 
-Two things in the source needed care. 32 product ids carry two different
-names, so `dim_product` keeps the name that appears most often and counts
-the names. The returns sheet lists some orders twice, so it is
-deduplicated before the join.
+The source has 32 product IDs with more than one name. `dim_product` keeps
+the most common name for each ID and records how many names appeared.
+Duplicate return records are removed before joining them to sales.
 
-A customer is new in the year of their first order and returning after
-that. Tableau computes the same thing with a fixed level of detail
-expression, so the two can be checked against each other.
+A customer is new in the year of their first recorded order and returning
+in later years. Tableau uses the first-order date calculated from the full
+dataset, so changing a region filter does not change that classification.
 
 ## The discount cap
 
 Every order line has a discount between 0 and 80 percent. `list_sales` is
-what the line would have cost with no discount. The page lets you pick a
-cap, and every line above it is recomputed as if it had the capped discount.
-Cost stays the same, so the extra revenue goes to profit.
+its value before the discount. The calculator applies a chosen maximum to
+order lines with a higher discount and recalculates sales and profit.
+Costs and quantities stay unchanged.
 
-This assumes the customers would still have bought at the smaller discount,
-which is not certain. It shows how much the big discounts cost, not what a
-new policy would earn.
+This assumes customers would buy the same quantities at a higher price.
+Some might buy less or not buy at all. The result is a comparison under
+these assumptions, not a profit forecast.
 
 ## Tests
 
@@ -90,9 +93,9 @@ new policy would earn.
 pytest
 ```
 
-The tests cover row counts, keys, date gaps, the product name issue, the
-returns join, the new customer rule, list sales, the growth numbers, and
-that big discounts lose money.
+The tests check row counts, keys, date coverage, product names, return
+records, customer classification, prices before discounts and growth
+figures. They also check the total loss on heavily discounted order lines.
 
 ## Data source
 

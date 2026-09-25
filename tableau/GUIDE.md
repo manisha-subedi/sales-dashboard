@@ -62,13 +62,17 @@ building the sheets.
 | Selected Metric | `CASE [Metric] WHEN "Sales" THEN SUM([Sales]) WHEN "Profit" THEN SUM([Profit]) WHEN "Orders" THEN COUNTD([Order ID]) ELSE COUNTD([Customer ID]) END` |
 | Sales per Customer | `SUM([Sales]) / COUNTD([Customer ID])` |
 | Return Rate | `COUNTD(IF [Returned] = "Yes" THEN [Order ID] END) / COUNTD([Order ID])` |
-| First Order Date LOD | `{FIXED [Customer ID] : MIN([Order Date])}` |
+| First Order Date LOD | `{FIXED [Customer ID] : MIN([First Order Date])}` |
 | Customer Type LOD | `IF YEAR([Order Date]) = YEAR([First Order Date LOD]) THEN "New" ELSE "Returning" END` |
 
 Customer Type LOD must give the same answer as the Customer Type column
 from the CSV. Check it once: put both on Rows of an empty sheet with
 COUNTD(Customer ID) on Text. Every row must have New with New and
 Returning with Returning, nothing crossed.
+
+Use the CSV's **First Order Date** in the calculation above. It was
+calculated from the full dataset. Using Order Date instead would let
+context filters change a customer's first-order year.
 
 Format the four YoY fields as percent with one decimal: right-click the
 field in the Data pane, **Default Properties**, **Number Format**,
@@ -123,6 +127,8 @@ tab, Duplicate) and swap the fields.
   Top, and pick the **Top N** parameter from the dropdown, by Sales, Sum.
 - Drag Profit onto Color, Orange-Blue Diverging, centered at 0.
 - Drag Is Selected Year to Filters and tick True.
+- Right-click Is Selected Year on Filters and choose **Add to Context**,
+  so the ranking uses the selected year's sales.
 
 ## 5. Sheets for Customers
 
@@ -143,6 +149,7 @@ tab, Duplicate) and swap the fields.
   parameter, by Sales, Sum.
 - Drag Profit Ratio onto Color, Orange-Blue Diverging, centered at 0.
 - Drag Is Selected Year to Filters and tick True.
+- Add Is Selected Year to context so the ranking uses the selected year.
 
 **Sales and profit per customer**
 - Drag Sales to Columns and Profit to Rows.
@@ -204,6 +211,12 @@ a grid). At the bottom left of the Dashboard pane set **Size** to
   **All Using This Data Source**.
 - Click the Sales by segment and category sheet and click the funnel icon
   at its top right (**Use as Filter**). Now clicking a cell filters the page.
+- Open the Top products and Top customers worksheets. Add Region and
+  Segment to context on both, so the rankings use the filtered data.
+  On Top products, also add the generated Action (Category, Segment)
+  filter to context. If it is not visible yet, select a heatmap cell first.
+  Check that Top N 10 still shows ten results when enough products or
+  customers are available, then clear the selection.
 - Right-click the sheet titles you do not need and hide them, and give each
   sheet a plain title, for example "Top products by sales".
 
@@ -234,8 +247,8 @@ Rename the dashboards to Overview, Customers, and Products.
 1. Open the **File** menu and choose **Save to Tableau Public As**.
 2. Sign in with the Tableau Public account.
 3. Name the workbook `Superstore Sales Performance`. Click Save.
-4. The browser opens the published viz. Click **Edit Details** and turn on
-   **Show Sheets**, so the three tabs are visible. Save.
+4. The browser opens the published report. Open **Settings** (the gear
+   icon) and turn on **Show Sheets**, so the three tabs are visible.
 5. Copy the link from the address bar. It looks like
    `https://public.tableau.com/views/SuperstoreSalesPerformance/Overview`.
    Cut off anything after the dashboard name, from `?` on.

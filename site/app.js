@@ -1,7 +1,7 @@
 // reads the json the build wrote, draws the charts, runs the discount tool
 
 // the published Tableau Public link goes here. empty hides the Tableau section
-const TABLEAU_URL = "";
+const TABLEAU_URL = "https://public.tableau.com/views/SuperstoreSalesPerformance_17903055112520/Overview";
 
 const COLOR = { blue: "#2a78d6", orange: "#eb6834", grey: "#c3c2b7", red: "#c8553d" };
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -213,8 +213,8 @@ function monthlyLines(key, format) {
 function drawCharts() {
   mount("chart-sales", monthlyLines("sales", (v) => "$" + Math.round(v / 1000) + "k"));
   document.getElementById("sales-caption").textContent = year === "all"
-    ? "Sales per month over the four years. Every year ends strong in November and December."
-    : `Sales per month in ${year}. The dashed line is ${Number(year) - 1}.`;
+    ? "Monthly sales from 2023 to 2026. Sales are generally higher towards the end of each year."
+    : `Monthly sales in ${year}. A dashed line shows the previous year when data is available.`;
   mount("chart-ratio", monthlyLines("profit_ratio", (v) => pct(v, 0)));
 
   const seg = combine(DATA.breakdowns.segment).sort((a, b) => b.sales - a.sales);
@@ -230,9 +230,9 @@ function drawCustomers() {
   const byYear = YEARS.filter((y) => selectedYears().includes(y)).map((y) => {
     const fresh = rows.find((r) => r.year === y && r.label === "New")?.customers || 0;
     const back = rows.find((r) => r.year === y && r.label === "Returning")?.customers || 0;
-    return { label: String(y), total: fresh + back, part: back, text: `${fresh} new, ${back} back` };
+    return { label: String(y), total: fresh + back, part: back, text: `${fresh} new, ${back} returning` };
   });
-  mount("chart-customers", barChart(byYear, { left: 50, right: 120 }));
+  mount("chart-customers", barChart(byYear, { left: 50, right: 160 }));
   document.getElementById("chart-customers").append(legend([{ label: "new", color: COLOR.blue }, { label: "returning", color: COLOR.grey }]));
 
   const products = combine(DATA.breakdowns.products, ["sales", "profit"]).sort((a, b) => b.sales - a.sales).slice(0, 10);
@@ -280,13 +280,13 @@ function drawDiscount() {
   const box = document.getElementById("cap-answer");
   box.innerHTML = `<div class="big"></div><div class="row"></div><div class="row"></div>`;
   box.children[0].textContent = cappedLines === 0
-    ? "No line has a discount above this cap"
-    : `Profit would be ${usd(profit + extra)} instead of ${usd(profit)}`;
+    ? "No order lines exceed this discount limit"
+    : `Profit under this assumption: ${usd(profit + extra)}`;
   box.children[1].textContent = cappedLines === 0
-    ? `The biggest discount in ${year === "all" ? "the data" : year} is ${pct(rows[rows.length - 1][0], 0)}.`
-    : `That is ${signed(extra / Math.abs(profit))}. ${num(cappedLines)} of ${num(lines)} lines (${pct(cappedLines / lines, 0)}) had a discount above ${pct(c, 0)}.`;
+    ? `The highest discount in ${year === "all" ? "the data" : year} is ${pct(rows[rows.length - 1][0], 0)}.`
+    : `Recorded profit was ${usd(profit)}. The calculated change is ${signed(extra / Math.abs(profit))}. ${num(cappedLines)} of ${num(lines)} order lines (${pct(cappedLines / lines, 0)}) had a discount above ${pct(c, 0)}.`;
   box.children[2].textContent = cappedLines === 0 ? "" :
-    `Sales would be ${usd(extra)} higher, if every one of those customers had still bought at ${pct(c, 0)} off. Some would not have, so the real gain is smaller.`;
+    `Sales would increase by ${usd(extra)} if customers bought the same quantities with a maximum discount of ${pct(c, 0)}. This does not account for changes in demand.`;
 }
 
 // ---------- tableau ----------

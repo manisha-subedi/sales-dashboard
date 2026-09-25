@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Four years of Superstore sales</title>
-  <meta name="description" content="A Tableau dashboard and a web page on four years of Superstore sales: growth, customers, products, and what discounts cost.">
+  <meta name="description" content="A Tableau sales dashboard using Superstore sample data from 2023 to 2026, with customer analysis and a discount calculator.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,22 +21,24 @@
   <main class="page">
     <h1>Four years of Superstore sales</h1>
     <p class="lede">
-      Superstore is a made-up office supplies company that ships in Tableau
-      as sample data. It has 10,194 order lines, 5,111 orders, and 804
-      customers, from January 2023 to December 2026.
+      This project uses Tableau's Superstore sample data, which represents
+      a fictional retailer. It covers 10,194 order lines, 5,111 orders and
+      804 customers from January 2023 to December 2026.
     </p>
     <p class="lede">
-      I built a Tableau dashboard on it, and this page shows the same numbers
-      as plain charts, plus a small tool that tries a cap on discounts.
+      I used SQL to prepare the data and built a three-page Tableau report.
+      Below the report, you can explore the results and see how a limit on
+      discounts would affect profit under fixed assumptions.
     </p>
 
     <!-- tableau. hidden until the published link is set in app.js -->
     <section id="tableau" hidden>
       <h2>The Tableau dashboard</h2>
       <p>
-        Three pages: an overview with a year picker and growth against the
-        year before, a customers page, and a products page. Pick a year, a
-        metric, or a top N, and click a segment to filter the rest.
+        The report has three pages: Overview, Customers and Products.
+        Use the controls to change the year or filter by region and customer
+        segment. On Overview, click a cell in the segment and category chart
+        to filter the other charts on that page.
       </p>
       <div class="viz" id="viz"></div>
       <p>
@@ -48,9 +50,8 @@
         <a id="shot-products" href="#"><img src="tableau/products.png" alt="Products page: sub-category sales coloured by profit, profit by discount level, return rate by sub-category, category share by quarter" loading="lazy"><span>3. Products</span></a>
       </div>
       <p class="note">
-        The calculated fields and parameters are listed in
-        <a href="https://github.com/manisha-subedi/sales-dashboard/blob/main/tableau/GUIDE.md">GUIDE.md</a>
-        on GitHub, with the steps to build the workbook.
+        The <a href="https://github.com/manisha-subedi/sales-dashboard/blob/main/tableau/GUIDE.md">Tableau guide</a>
+        explains the calculations, filters and steps used to build the report.
       </p>
     </section>
 
@@ -62,11 +63,11 @@
       <button type="button" data-year="2025">2025</button>
       <button type="button" data-year="2026">2026</button>
     </div>
-    <p class="note">Pick a year to update the tiles, charts, and the discount tool below.</p>
+    <p class="note">Select a year to update the figures, charts and discount calculator below. These controls are separate from the Tableau report.</p>
 
     <!-- part 1 -->
     <section>
-      <h2>1. How the business did</h2>
+      <h2>1. Sales and profit</h2>
       <div class="tiles" id="tiles"></div>
       <p class="note" id="tiles-note"></p>
 
@@ -79,19 +80,19 @@
       <figure>
         <h3>Profit ratio by month</h3>
         <div id="chart-ratio"></div>
-        <figcaption>Profit ratio is profit divided by sales. The dashed line is the year before, when one year is picked.</figcaption>
+        <figcaption>Profit ratio is profit divided by sales. When available, the dashed line shows the previous year for comparison.</figcaption>
       </figure>
 
       <div class="two">
         <figure>
           <h3>Sales by segment</h3>
           <div id="chart-segment"></div>
-          <figcaption>Consumer is the biggest segment every year. The grey part is profit.</figcaption>
+          <figcaption>The Consumer segment has the highest sales each year. Grey shows the portion of sales kept as profit.</figcaption>
         </figure>
         <figure>
           <h3>Sales by region</h3>
           <div id="chart-region"></div>
-          <figcaption>West and East bring most of the sales. Central has the lowest profit ratio.</figcaption>
+          <figcaption>The West and East account for most sales. The Central region has the lowest profit ratio.</figcaption>
         </figure>
       </div>
     </section>
@@ -103,12 +104,12 @@
         <figure>
           <h3>New and returning customers</h3>
           <div id="chart-customers"></div>
-          <figcaption>A customer is new in the year of their first order. Almost every customer from 2023 came back, so later years are mostly returning customers.</figcaption>
+          <figcaption>A customer is new in the year of their first recorded order. Returning customers account for most customers in later years.</figcaption>
         </figure>
         <figure>
           <h3>Top 10 products by sales</h3>
           <div id="chart-products"></div>
-          <figcaption>Sales for the picked years. Some big sellers lose money, shown by the grey part being empty and the number in red.</figcaption>
+          <figcaption>The ten products with the highest sales in the selected period. Grey shows profit. Red labels mark products that made a loss.</figcaption>
         </figure>
       </div>
     </section>
@@ -119,28 +120,28 @@
       <figure>
         <h3>Profit by sub-category</h3>
         <div id="chart-subcategory"></div>
-        <figcaption>Tables, bookcases, and supplies lose money in every year. Copiers and phones make the most.</figcaption>
+        <figcaption>Across all four years, tables, bookcases and supplies made a loss. Copiers and phones had the highest total profit.</figcaption>
       </figure>
 
       <figure>
         <h3>Profit by discount level</h3>
         <div id="chart-discount"></div>
-        <figcaption>Lines with no discount make money. From 30 percent discount and up, lines lose money on average. The marker shows the cap picked below.</figcaption>
+        <figcaption>Orders sold without a discount were profitable overall. Order lines discounted by 30% or more made a loss overall. The marker shows the discount limit selected below.</figcaption>
       </figure>
 
-      <h3>What if discounts were capped?</h3>
+      <h3>What if we limited discounts?</h3>
       <p>
-        Pick a cap. Every line with a bigger discount is recomputed as if it
-        had the capped discount instead. Cost stays the same, so the extra
-        revenue goes straight to profit.
+        Choose a maximum discount. The calculator applies that limit to
+        order lines with a higher discount, then recalculates sales and
+        profit. It keeps costs and quantities unchanged.
       </p>
       <p>
-        This assumes the customers would still have bought at the smaller
-        discount, which is not certain. It shows how much money the big
-        discounts cost, not a forecast of what a new policy would earn.
+        This assumes customers would buy the same quantities at a higher
+        price. Some might buy less or not buy at all. The result is a
+        comparison under these assumptions, not a profit forecast.
       </p>
       <div class="picker" id="cap-inputs">
-        <label>Cap discounts at <span id="cap-value">20%</span>
+        <label>Maximum discount <span id="cap-value">20%</span>
           <input type="range" data-cap min="0" max="80" step="5" value="20">
         </label>
       </div>
@@ -151,11 +152,10 @@
     <section>
       <h2>How I built this</h2>
       <p>
-        The source is one Excel file with three sheets: orders, returns, and
-        regional managers. DuckDB SQL turns it into a small star schema:
-        one fact table with an order line per row, and dimensions for
-        customers, products, and dates. Returns and managers are joined
-        onto the fact.
+        The source Excel file has three sheets: orders, returns and regional
+        managers. I used DuckDB and SQL to create a sales table with one row
+        per order line and separate tables for customers, products and dates.
+        I then joined the return records and manager details to the sales table.
       </p>
       <figure class="schema">
         <svg viewBox="0 0 640 220" role="img" aria-label="Star schema: fact_sales in the centre linked to dim_date, dim_customer and dim_product, with returns and people joined in">
@@ -192,20 +192,18 @@
             <path d="M470 174 L400 124"></path>
           </g>
         </svg>
-        <figcaption>The same flat table, with the dimensions joined back on, is what Tableau reads.</figcaption>
+        <figcaption>Tableau uses a CSV that combines the sales table with the customer, product and date details.</figcaption>
       </figure>
       <p>
-        Two things in the source needed care. 32 product ids carry two
-        different names, so the product table keeps the name that appears
-        most often and counts the names. The returns sheet lists some orders
-        twice, so it is deduplicated before the join. Tests check both,
-        plus the row counts, the keys, and the growth numbers.
+        The source has 32 product IDs with more than one name. For each ID,
+        I kept the most common name and recorded how many names appeared.
+        I also removed duplicate return records before joining them to sales.
+        Tests check these steps, row counts, table keys and growth figures.
       </p>
       <p>
-        The build writes JSON files that this page reads to draw the charts
-        and run the discount tool. It also writes one flat CSV that the
-        Tableau workbook connects to. The code, SQL, tests, and the Tableau
-        guide are on
+        The build script exports JSON files for this page and a CSV for
+        Tableau, so both use the same prepared data. The code, SQL, tests
+        and Tableau guide are on
         <a href="https://github.com/manisha-subedi/sales-dashboard">GitHub</a>.
       </p>
       <p class="note">
