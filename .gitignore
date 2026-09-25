@@ -1,0 +1,7 @@
+.venv/
+data/
+tableau/data/
+sales.duckdb
+__pycache__/
+.pytest_cache/
+.DS_Store

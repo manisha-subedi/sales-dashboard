@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Four years of Superstore sales</title>
+  <meta name="description" content="A Tableau dashboard and a web page on four years of Superstore sales: growth, customers, products, and what discounts cost.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <a class="site-name" href="https://manisha-subedi.github.io/">Manisha Subedi</a>
+      <nav>
+        <a href="https://manisha-subedi.github.io/projects/">Projects</a>
+        <a href="https://github.com/manisha-subedi/sales-dashboard">Code</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <h1>Four years of Superstore sales</h1>
+    <p class="lede">
+      Superstore is a made-up office supplies company that ships in Tableau
+      as sample data. It has 10,194 order lines, 5,111 orders, and 804
+      customers, from January 2023 to December 2026.
+    </p>
+    <p class="lede">
+      I built a Tableau dashboard on it, and this page shows the same numbers
+      as plain charts, plus a small tool that tries a cap on discounts.
+    </p>
+
+    <!-- tableau. hidden until the published link is set in app.js -->
+    <section id="tableau" hidden>
+      <h2>The Tableau dashboard</h2>
+      <p>
+        Three pages: an overview with a year picker and growth against the
+        year before, a customers page, and a products page. Pick a year, a
+        metric, or a top N, and click a segment to filter the rest.
+      </p>
+      <div class="viz" id="viz"></div>
+      <p>
+        <a class="button" id="viz-link" href="#">Open in Tableau Public</a>
+      </p>
+      <div class="pages">
+        <a id="shot-overview" href="#"><img src="tableau/overview.png" alt="Overview page: four KPI tiles with growth, monthly sales and profit ratio, a map of profit by state, segment by category, top products" loading="lazy"><span>1. Overview</span></a>
+        <a id="shot-customers" href="#"><img src="tableau/customers.png" alt="Customers page: new and returning customers by year, sales per customer by segment, top customers, sales against profit per customer" loading="lazy"><span>2. Customers</span></a>
+        <a id="shot-products" href="#"><img src="tableau/products.png" alt="Products page: sub-category sales coloured by profit, profit by discount level, return rate by sub-category, category share by quarter" loading="lazy"><span>3. Products</span></a>
+      </div>
+      <p class="note">
+        The calculated fields and parameters are listed in
+        <a href="https://github.com/manisha-subedi/sales-dashboard/blob/main/tableau/GUIDE.md">GUIDE.md</a>
+        on GitHub, with the steps to build the workbook.
+      </p>
+    </section>
+
+    <h2>Explore the data</h2>
+    <div class="switch" role="group" aria-label="Choose a year">
+      <button type="button" data-year="all" class="is-on">All years</button>
+      <button type="button" data-year="2023">2023</button>
+      <button type="button" data-year="2024">2024</button>
+      <button type="button" data-year="2025">2025</button>
+      <button type="button" data-year="2026">2026</button>
+    </div>
+    <p class="note">Pick a year to update the tiles, charts, and the discount tool below.</p>
+
+    <!-- part 1 -->
+    <section>
+      <h2>1. How the business did</h2>
+      <div class="tiles" id="tiles"></div>
+      <p class="note" id="tiles-note"></p>
+
+      <figure>
+        <h3>Sales by month</h3>
+        <div id="chart-sales"></div>
+        <figcaption id="sales-caption"></figcaption>
+      </figure>
+
+      <figure>
+        <h3>Profit ratio by month</h3>
+        <div id="chart-ratio"></div>
+        <figcaption>Profit ratio is profit divided by sales. The dashed line is the year before, when one year is picked.</figcaption>
+      </figure>
+
+      <div class="two">
+        <figure>
+          <h3>Sales by segment</h3>
+          <div id="chart-segment"></div>
+          <figcaption>Consumer is the biggest segment every year. The grey part is profit.</figcaption>
+        </figure>
+        <figure>
+          <h3>Sales by region</h3>
+          <div id="chart-region"></div>
+          <figcaption>West and East bring most of the sales. Central has the lowest profit ratio.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- part 2 -->
+    <section>
+      <h2>2. Customers</h2>
+      <div class="two">
+        <figure>
+          <h3>New and returning customers</h3>
+          <div id="chart-customers"></div>
+          <figcaption>A customer is new in the year of their first order. Almost every customer from 2023 came back, so later years are mostly returning customers.</figcaption>
+        </figure>
+        <figure>
+          <h3>Top 10 products by sales</h3>
+          <div id="chart-products"></div>
+          <figcaption>Sales for the picked years. Some big sellers lose money, shown by the grey part being empty and the number in red.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- part 3 -->
+    <section>
+      <h2>3. Products and discounts</h2>
+      <figure>
+        <h3>Profit by sub-category</h3>
+        <div id="chart-subcategory"></div>
+        <figcaption>Tables, bookcases, and supplies lose money in every year. Copiers and phones make the most.</figcaption>
+      </figure>
+
+      <figure>
+        <h3>Profit by discount level</h3>
+        <div id="chart-discount"></div>
+        <figcaption>Lines with no discount make money. From 30 percent discount and up, lines lose money on average. The marker shows the cap picked below.</figcaption>
+      </figure>
+
+      <h3>What if discounts were capped?</h3>
+      <p>
+        Pick a cap. Every line with a bigger discount is recomputed as if it
+        had the capped discount instead. Cost stays the same, so the extra
+        revenue goes straight to profit.
+      </p>
+      <p>
+        This assumes the customers would still have bought at the smaller
+        discount, which is not certain. It shows how much money the big
+        discounts cost, not a forecast of what a new policy would earn.
+      </p>
+      <div class="picker" id="cap-inputs">
+        <label>Cap discounts at <span id="cap-value">20%</span>
+          <input type="range" data-cap min="0" max="80" step="5" value="20">
+        </label>
+      </div>
+      <div class="answer" id="cap-answer"></div>
+    </section>
+
+    <!-- how it is built -->
+    <section>
+      <h2>How I built this</h2>
+      <p>
+        The source is one Excel file with three sheets: orders, returns, and
+        regional managers. DuckDB SQL turns it into a small star schema:
+        one fact table with an order line per row, and dimensions for
+        customers, products, and dates. Returns and managers are joined
+        onto the fact.
+      </p>
+      <figure class="schema">
+        <svg viewBox="0 0 640 220" role="img" aria-label="Star schema: fact_sales in the centre linked to dim_date, dim_customer and dim_product, with returns and people joined in">
+          <g class="box" transform="translate(240 76)">
+            <rect width="160" height="68" rx="6"></rect>
+            <text x="80" y="22" text-anchor="middle" class="t">fact_sales</text>
+            <text x="80" y="42" text-anchor="middle" class="s">10,194 rows</text>
+            <text x="80" y="58" text-anchor="middle" class="s">one per order line</text>
+          </g>
+          <g class="box dim" transform="translate(20 20)">
+            <rect width="150" height="52" rx="6"></rect>
+            <text x="75" y="22" text-anchor="middle" class="t">dim_date</text>
+            <text x="75" y="40" text-anchor="middle" class="s">every day, no gaps</text>
+          </g>
+          <g class="box dim" transform="translate(470 20)">
+            <rect width="150" height="52" rx="6"></rect>
+            <text x="75" y="22" text-anchor="middle" class="t">dim_customer</text>
+            <text x="75" y="40" text-anchor="middle" class="s">804 customers, first order</text>
+          </g>
+          <g class="box dim" transform="translate(20 148)">
+            <rect width="150" height="52" rx="6"></rect>
+            <text x="75" y="22" text-anchor="middle" class="t">dim_product</text>
+            <text x="75" y="40" text-anchor="middle" class="s">1,862 products</text>
+          </g>
+          <g class="box dim" transform="translate(470 148)">
+            <rect width="150" height="52" rx="6"></rect>
+            <text x="75" y="22" text-anchor="middle" class="t">returns, people</text>
+            <text x="75" y="40" text-anchor="middle" class="s">296 orders, 4 managers</text>
+          </g>
+          <g class="lines">
+            <path d="M170 46 L240 96"></path>
+            <path d="M470 46 L400 96"></path>
+            <path d="M170 174 L240 124"></path>
+            <path d="M470 174 L400 124"></path>
+          </g>
+        </svg>
+        <figcaption>The same flat table, with the dimensions joined back on, is what Tableau reads.</figcaption>
+      </figure>
+      <p>
+        Two things in the source needed care. 32 product ids carry two
+        different names, so the product table keeps the name that appears
+        most often and counts the names. The returns sheet lists some orders
+        twice, so it is deduplicated before the join. Tests check both,
+        plus the row counts, the keys, and the growth numbers.
+      </p>
+      <p>
+        The build writes JSON files that this page reads to draw the charts
+        and run the discount tool. It also writes one flat CSV that the
+        Tableau workbook connects to. The code, SQL, tests, and the Tableau
+        guide are on
+        <a href="https://github.com/manisha-subedi/sales-dashboard">GitHub</a>.
+      </p>
+      <p class="note">
+        Data: Sample - Superstore, the sample dataset that ships with Tableau.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer"><p>© 2026 Manisha Subedi</p></footer>
+
+  <script type="module" src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
