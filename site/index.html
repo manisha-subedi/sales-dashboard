@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Four years of sales at a tech company</title>
-  <meta name="description" content="A Tableau executive dashboard on four years of sales at a European tech company, with growth against the year before, segments, countries, and where the growth came from.">
+  <title>Sales performance dashboard</title>
+  <meta name="description" content="A Tableau report on four years of sales data from a European technology company.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,29 +19,26 @@
   </header>
 
   <main class="page">
-    <h1>Four years of sales at a tech company</h1>
+    <h1>Sales performance dashboard</h1>
     <p class="lede">
-      The data is 10,000 order lines from a practice dataset about a tech
-      company that sells hardware, software, and services in 15 European
-      countries, from January 2020 to December 2023. It has 4,596 orders and
-      795 customers.
+      This project uses a practice sales dataset for a technology company.
+      It has 10,000 order lines, 4,596 orders, and 795 customers across 15
+      European countries from January 2020 to December 2023.
     </p>
     <p class="lede">
-      I built a Tableau dashboard on it for an executive audience: sales,
-      profit, orders, and customers against the year before, by segment,
-      category, and country. This page shows the same numbers as plain
-      charts, and adds a breakdown of where each year's growth came from.
+      I used the data to build a two-page Tableau dashboard. It compares
+      sales, profit, orders, and customers with the previous year. This page
+      shows the same results and looks more closely at the change in sales.
     </p>
 
     <!-- tableau. hidden until the published link is set in app.js -->
     <section id="tableau" hidden>
       <h2>The Tableau dashboard</h2>
       <p>
-        Two pages. The executive summary has the four KPIs with the previous
-        year as a mark on every month, a year and metric picker, segment and
-        category comparisons with small trend lines, and a country map.
-        Click a country to filter the page. The customers page shows new and
-        returning customers, the top customers, and profit by sub-category.
+        The executive summary compares four main measures with the previous
+        year. It also shows monthly results, segment and category comparisons,
+        and a country map. The customer page shows new and returning customers,
+        the top customers, and profit by sub-category.
       </p>
       <div class="viz" id="viz"></div>
       <p>
@@ -65,7 +62,7 @@
       <button type="button" data-year="2022">2022</button>
       <button type="button" data-year="2023">2023</button>
     </div>
-    <p class="note">Pick a year to update the tiles and charts below. These controls are separate from the Tableau report.</p>
+    <p class="note">Choose a year to update the charts below. These controls are separate from the Tableau report.</p>
 
     <!-- part 1 -->
     <section>
@@ -89,12 +86,12 @@
         <figure>
           <h3>Sales by segment</h3>
           <div id="chart-segment"></div>
-          <figcaption>Consumer is the biggest segment in every year. The grey part is profit.</figcaption>
+          <figcaption>Consumer has the highest sales in every year. The grey part shows profit.</figcaption>
         </figure>
         <figure>
           <h3>Sales by category</h3>
           <div id="chart-category"></div>
-          <figcaption>Services and software are close. Hardware is smaller and makes less profit per dollar.</figcaption>
+          <figcaption>Services and software have similar sales. Hardware is smaller and has a lower profit ratio.</figcaption>
         </figure>
       </div>
     </section>
@@ -106,19 +103,19 @@
         <figure>
           <h3>Sales by country</h3>
           <div id="chart-country"></div>
-          <figcaption>France, Germany, and the United Kingdom bring most of the sales. Five small markets lose money: the Netherlands, Sweden, Ireland, Portugal, and Denmark.</figcaption>
+          <figcaption>France, Germany, and the United Kingdom have the highest sales. The Netherlands, Sweden, Ireland, Portugal, and Denmark have negative profit.</figcaption>
         </figure>
         <figure>
           <h3>Profit ratio by country</h3>
           <div id="chart-country-ratio"></div>
-          <figcaption>Profit divided by sales. Red means the country lost money in the picked years.</figcaption>
+          <figcaption>Profit divided by sales. Red shows a negative result for the selected years.</figcaption>
         </figure>
       </div>
 
       <figure>
         <h3>Profit by sub-category</h3>
         <div id="chart-subcategory"></div>
-        <figcaption>Networking equipment, repair, and virtualization make the most. Computers lose money overall.</figcaption>
+        <figcaption>Networking equipment, repair, and virtualization have the highest profit. Computers have negative profit overall.</figcaption>
       </figure>
     </section>
 
@@ -129,22 +126,21 @@
         <figure>
           <h3>New and returning customers</h3>
           <div id="chart-customers"></div>
-          <figcaption>A customer is new in the year of their first order. After 2020, almost every customer is a returning one.</figcaption>
+          <figcaption>A customer is new in the year of their first order. Most customers after 2020 are returning customers.</figcaption>
         </figure>
         <figure>
           <h3>Top 10 customers by sales</h3>
           <div id="chart-top-customers"></div>
-          <figcaption>Sales for the picked years. The grey part is profit. Red means the customer cost money.</figcaption>
+          <figcaption>Sales for the selected years. The grey part shows profit. Red shows negative profit.</figcaption>
         </figure>
       </div>
 
-      <h3>Where did the growth come from?</h3>
+      <h3>What changed sales?</h3>
       <p>
-        Sales grew every year, but the customer count barely moved. This
-        splits each year's change in sales by who caused it: new customers,
-        customers who came back after a year away, returning customers who
-        spent more or less than the year before, and customers who did not
-        order at all.
+        Sales grew every year, but the number of customers changed very
+        little. The chart groups the change into new customers, customers who
+        came back after a year away, returning customers who spent more or
+        less, and customers who did not order.
       </p>
       <div class="picker" id="growth-inputs">
         <label>Segment
@@ -159,7 +155,7 @@
       <div class="answer" id="growth-answer"></div>
       <figure>
         <div id="chart-growth"></div>
-        <figcaption>The five parts add up to the change in sales against the year before. Pick a year above to change the year, 2020 has no year before it.</figcaption>
+        <figcaption>The five groups add up to the change in sales from the previous year. There is no comparison for 2020.</figcaption>
       </figure>
     </section>
 
@@ -204,18 +200,16 @@
         <figcaption>The same flat table, with the dimensions joined back on, is what Tableau reads.</figcaption>
       </figure>
       <p>
-        Three things in the source needed care. Dates are written day first,
-        so they are parsed that way. The file has two columns that mark the
-        current and last year by hand, and they are dropped, the year comes
-        from the order date instead. And some order ids appear with more
-        than one customer or date, so orders are counted as distinct ids,
-        the same way the original dashboard did.
+        The source needed a few checks. Dates use day-month-year format. Two
+        manual year markers were removed because the year can be taken from
+        the order date. Some order IDs appear with more than one customer or
+        date, so orders are counted as distinct IDs, as they were in the
+        original dashboard.
       </p>
       <p>
-        The growth split works on one table with sales per customer per
-        year. For each year, every customer is put in one of five groups by
-        comparing their sales with the year before. A test checks that the
-        five groups add up to the total change.
+        One table stores sales per customer and year. Customers are placed in
+        five groups by comparing their sales with the previous year. A test
+        checks that the five groups add up to the total change.
       </p>
       <p>
         The build writes JSON files that this page reads, and one flat CSV

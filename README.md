@@ -1,14 +1,14 @@
-# Four years of sales at a tech company
+# Sales performance dashboard
 
 [View the project](https://manisha-subedi.github.io/sales-dashboard/)
 
-The data is 10,000 order lines from a practice dataset about a tech company
-that sells hardware, software, and services in 15 European countries, from
-January 2020 to December 2023. It has 4,596 orders and 795 customers.
+This project uses a practice sales dataset for a technology company. It has
+10,000 order lines, 4,596 orders, and 795 customers across 15 European
+countries from January 2020 to December 2023.
 
-I built a Tableau dashboard on it for an executive audience, and a web page
-that shows the same numbers as plain charts and splits each year's growth
-by who caused it.
+I used the data to build a two-page Tableau dashboard and a simple web report.
+Both show sales, profit, orders, customers, and the parts of the business that
+changed sales from one year to the next.
 
 ```
 Order lines: 10,000
@@ -17,21 +17,22 @@ Customers: 795
 2023 vs 2022: sales +36.2%, profit +30.9%, orders +26.7%, customers +6.0%
 Biggest segment: Consumer, $1.53M of $2.94M
 Biggest countries: France, Germany, United Kingdom
-Countries that lose money: Netherlands, Sweden, Ireland, Portugal, Denmark
+Countries with negative profit: Netherlands, Sweden, Ireland, Portugal, Denmark
 ```
 
 ## The Tableau dashboard
 
-Two pages, built in Tableau Public from one flat CSV that the build writes.
+The Tableau Public report has two pages and reads one flat CSV made by the
+build script.
 
-1. Executive summary: sales, profit, orders, and customers for the picked
-   year, each with the year before and the change in percent, and a bar
-   per month with the previous year as a mark. A metric picker drives the
-   segment and category comparisons, each with small trend lines for the
-   current and previous year, and a map of Europe. Clicking a country
-   filters the page.
-2. Customers: new and returning customers by year, the top customers, and
-   profit by sub-category.
+[Open the dashboard in Tableau Public](https://public.tableau.com/views/ExecutiveSalesPerformanceDashboard_17906635800740/ExecutiveSummary?:showVizHome=no)
+
+1. The executive summary compares sales, profit, orders, and customers with
+   the previous year. It also shows monthly results, segment and category
+   comparisons, and a map of Europe. The year and metric controls update the
+   page. Selecting a country filters the report.
+2. The customer page shows new and returning customers, the top customers,
+   and profit by sub-category.
 
 `tableau/GUIDE.md` lists the parameters and calculated fields, and the
 steps to build the workbook. `tableau/original-dashboard.png` is the first
@@ -61,26 +62,24 @@ python -m http.server --directory site
 | `kpi_month` | 48 | sales, profit, orders, and customers per month |
 | `customer_year` | 2,503 | sales per customer per year |
 
-Three things in the source needed care. Dates are written day first. The
-file has two columns that mark the current and last year by hand, and they
-are dropped, the year comes from the order date. Some order ids appear with
-more than one customer or date, so orders are counted as distinct ids, the
-same way the original dashboard did.
+The source needed a few checks. Dates use day-month-year format. Two manual
+year markers were removed because the year can be taken from the order date.
+Some order IDs appear with more than one customer or date, so orders are
+counted as distinct IDs, as they were in the original dashboard.
 
-A customer is new in the year of their first order and returning after
-that. Tableau can compute the same thing with a fixed level of detail
-expression, so the two can be checked against each other.
+A customer is new in the year of their first order and returning after that.
+Tableau calculates the same result with a fixed level of detail expression,
+which gives a second way to check the classification.
 
-## Where the growth came from
+## What changed sales
 
-Sales grew every year while the customer count barely moved. For each year,
-every customer goes in one of five groups by comparing their sales with the
-year before: new, came back after a year away, returning and spent more,
-returning and spent less, or did not order. The sales change of each group
-adds up to the total change, and a test checks that.
+Sales grew every year while the number of customers changed very little. For
+each year, customers are grouped as new, back after a year away, returning
+and spending more, returning and spending less, or not ordering. The changes
+from the five groups add up to the total change in sales. A test checks this.
 
-In 2023, returning customers who spent more added $497k and customers who
-came back after a year away added $185k. Only 5 customers were new.
+In 2023, returning customers who spent more added $497k. Customers who came
+back after a year away added another $185k. Only five customers were new.
 
 ## Tests
 
@@ -88,8 +87,8 @@ came back after a year away added $185k. Only 5 customers were new.
 pytest
 ```
 
-The tests cover row counts, keys, the country mapping, date gaps, the new
-customer rule, the headline growth numbers, and that the growth groups add
+The tests check row counts, keys, the country mapping, missing dates, the new
+customer rule, the main growth numbers, and whether the customer groups add
 up to the change in sales.
 
 ## Data source
