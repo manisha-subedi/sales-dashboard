@@ -1,10 +1,10 @@
 [project]
 name = "sales-dashboard"
-version = "0.1.0"
-description = "Four years of Superstore sales in a Tableau dashboard and a web page."
+version = "0.2.0"
+description = "Four years of sales at a European tech company, in a Tableau dashboard and a web page."
 requires-python = ">=3.11"
 license = { text = "MIT" }
-dependencies = ["duckdb>=1.1", "xlrd>=2.0"]
+dependencies = ["duckdb>=1.1"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
