@@ -25,7 +25,7 @@ Countries with negative profit: Netherlands, Sweden, Ireland, Portugal, Denmark
 The Tableau Public report has two pages and reads one flat CSV made by the
 build script.
 
-[Open the dashboard in Tableau Public](https://public.tableau.com/views/ExecutiveSalesPerformanceDashboard_17906635800740/ExecutiveSummary?:showVizHome=no)
+[Open the dashboard in Tableau Public](https://public.tableau.com/views/ExecutiveSalesPerformanceDashboard_17906958124760/ExecutiveSummary?:showVizHome=no)
 
 1. The executive summary compares sales, profit, orders, and customers with
    the previous year. It also shows monthly results, segment and category

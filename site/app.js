@@ -1,7 +1,7 @@
 // reads the json the build wrote, draws the charts, runs the growth split
 
 // the published Tableau Public link goes here. empty hides the Tableau section
-const TABLEAU_URL = "https://public.tableau.com/views/ExecutiveSalesPerformanceDashboard_17906635800740/ExecutiveSummary?:showVizHome=no";
+const TABLEAU_URL = "https://public.tableau.com/views/ExecutiveSalesPerformanceDashboard_17906958124760/ExecutiveSummary?:showVizHome=no";
 
 const COLOR = { blue: "#2a78d6", orange: "#eb6834", grey: "#c3c2b7", red: "#c8553d" };
 const SVG_NS = "http://www.w3.org/2000/svg";
